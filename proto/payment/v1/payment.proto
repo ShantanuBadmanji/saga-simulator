@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package payment.v1;
+
+option go_package = ";paymentv1";
+
+service PaymentService {
+  rpc Charge(ChargeRequest) returns (ChargeResponse);
+  rpc Refund(RefundRequest) returns (RefundResponse);
+}
+
+message ChargeRequest {
+  string saga_id  = 1;
+  string order_id = 2;
+  int64  amount   = 3;
+  string currency = 4;
+}
+
+message ChargeResponse {
+  string payment_id = 1;
+}
+
+message RefundRequest {
+  string saga_id    = 1;
+  string payment_id = 2;
+}
+
+message RefundResponse {}

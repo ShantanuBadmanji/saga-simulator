@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package catelog.v1;
+
+option go_package = ";catelogv1";
+
+service CatelogService {
+  rpc GetSKUPrice(GetSKUPriceRequest) returns (GetSKUPriceResponse);
+}
+
+message GetSKUPriceRequest {
+  string sku_id = 1;
+}
+
+message GetSKUPriceResponse {
+  string sku_id   = 1;
+  double price    = 2;
+  string currency = 3;
+}

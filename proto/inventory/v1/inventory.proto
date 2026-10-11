@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package inventory.v1;
+
+option go_package = ";inventoryv1";
+
+service InventoryService {
+  rpc Reserve(ReserveRequest) returns (ReserveResponse);
+  rpc Release(ReleaseRequest) returns (ReleaseResponse);
+}
+
+message ReserveRequest {
+  string saga_id    = 1;
+  string order_id   = 2;
+  string product_id = 3;
+  int32  quantity   = 4;
+}
+
+message ReserveResponse {
+  string reservation_id = 1;
+}
+
+message ReleaseRequest {
+  string saga_id        = 1;
+  string reservation_id = 2;
+}
+
+message ReleaseResponse {}

@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ShantanuBadmanji/saga-simulator/backend/internal/httpserver"
+	"github.com/ShantanuBadmanji/saga-simulator/backend/internal/platform/httpserver"
 	"github.com/ShantanuBadmanji/saga-simulator/backend/services/catalog/internal/api/rest"
 	"github.com/ShantanuBadmanji/saga-simulator/backend/services/catalog/internal/datasource/repository"
 )

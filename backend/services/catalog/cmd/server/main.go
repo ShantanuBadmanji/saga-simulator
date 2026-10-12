@@ -17,7 +17,7 @@ import (
 
 func registerBasicRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, "Welcome to Catelog Service")
+		fmt.Fprintln(w, "Welcome to Catalog Service")
 	})
 
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
@@ -44,9 +44,9 @@ func run() error {
 
 	var productRepo repository.ProductRepository = nil
 	service := rest.NewCatalogService(productRepo)
-	controller := rest.NewCatalogController(service)
+	handler := rest.NewCatalogHandler(service)
 
-	controller.RegisterRoutes(mux)
+	handler.RegisterRoutes(mux)
 
 	server := &http.Server{
 		Addr:    ":8080",

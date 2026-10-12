@@ -5,23 +5,23 @@ import (
 	"net/http"
 )
 
-type CatalogController struct {
+type CatalogHandler struct {
 	catalogService *CatalogService
 }
 
-// NewCatalogController creates a new instance of CatalogController.
-func NewCatalogController(catalogService *CatalogService) *CatalogController {
-	return &CatalogController{
+// NewCatalogHandler creates a new instance of CatalogController.
+func NewCatalogHandler(catalogService *CatalogService) *CatalogHandler {
+	return &CatalogHandler{
 		catalogService: catalogService,
 	}
 }
 
-func (c *CatalogController) RegisterRoutes(mux *http.ServeMux) {
+func (c *CatalogHandler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /catalog", c.get)
 }
 
 // GetCatalog handles the request to retrieve the catalog.
-func (c *CatalogController) get(w http.ResponseWriter, r *http.Request) {
+func (c *CatalogHandler) get(w http.ResponseWriter, r *http.Request) {
 	// Implement the logic to retrieve the catalog data.
 	// For example, you can fetch data from a database or any other source.
 

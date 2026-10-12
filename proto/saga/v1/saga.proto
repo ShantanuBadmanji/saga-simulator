@@ -4,7 +4,7 @@ package saga.v1;
 
 option go_package = ";sagav1";
 
-service SagaService {
+service Saga {
   rpc StartSaga(StartSagaRequest) returns (StartSagaResponse);
   rpc GetSaga(GetSagaRequest) returns (GetSagaResponse);
 }

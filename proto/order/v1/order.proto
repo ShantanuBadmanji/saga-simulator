@@ -4,7 +4,7 @@ package order.v1;
 
 option go_package = ";orderv1";
 
-service OrderService {
+service Order {
   rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse);
   rpc GetOrder(GetOrderRequest) returns (GetOrderResponse);
 }

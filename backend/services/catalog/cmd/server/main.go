@@ -2,20 +2,25 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
 	"github.com/ShantanuBadmanji/saga-simulator/backend/internal/platform/httpserver"
 	"github.com/ShantanuBadmanji/saga-simulator/backend/services/catalog/internal/api/rest"
-	"github.com/ShantanuBadmanji/saga-simulator/backend/services/catalog/internal/datasource/repository"
+	"github.com/ShantanuBadmanji/saga-simulator/backend/services/catalog/internal/datasource/sqlite/sqlcgen"
+	"github.com/joho/godotenv"
+	_ "github.com/ncruces/go-sqlite3/driver"
 )
 
 func registerBasicRoutes(mux *http.ServeMux) {
+
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, "Welcome to Catalog Service")
 	})
@@ -32,6 +37,7 @@ func registerBasicRoutes(mux *http.ServeMux) {
 			log.Println("Long request canceled:", r.Context().Err())
 		}
 	})
+
 }
 
 const (
@@ -39,18 +45,36 @@ const (
 )
 
 func run() error {
+	ctx := context.Background()
+
+	if err := godotenv.Load(); err != nil {
+		return fmt.Errorf("Error loading .env file: %w", err)
+	}
+
 	mux := http.NewServeMux()
 	registerBasicRoutes(mux)
 
-	var productRepo repository.ProductRepository = nil
-	service := rest.NewCatalogService(productRepo)
-	handler := rest.NewCatalogHandler(service)
+	dbPath := filepath.Join(os.Getenv("DB_DIR"), "catalog.db")
+	log.Print(dbPath)
+	db, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		return fmt.Errorf("error connecting to db: %w", err)
+	}
+	if err := db.PingContext(ctx); err != nil {
+		return fmt.Errorf("db ping failed: %w", err)
+	}
+	queries := sqlcgen.New(db)
 
+	service := rest.NewCatalogService(queries, queries, queries)
+	handler := rest.NewCatalogHandler(service)
 	handler.RegisterRoutes(mux)
+
+	rootMux := http.NewServeMux()
+	rootMux.Handle("/catalog/", http.StripPrefix("/catalog", mux))
 
 	server := &http.Server{
 		Addr:    ":8080",
-		Handler: mux,
+		Handler: rootMux,
 	}
 
 	// Cancel the context when an interrupt or termination signal is received.

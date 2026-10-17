@@ -1,2 +1,5 @@
 /backend/internal/gen
+/backend/data/
 /practice
+
+.env

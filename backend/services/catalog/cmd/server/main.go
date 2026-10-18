@@ -55,7 +55,6 @@ func run() error {
 	registerBasicRoutes(mux)
 
 	dbPath := filepath.Join(os.Getenv("DB_DIR"), "catalog.db")
-	log.Print(dbPath)
 	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
 		return fmt.Errorf("error connecting to db: %w", err)
@@ -89,6 +88,12 @@ func run() error {
 }
 
 func main() {
+	// Configure flags for date, time, and file location
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+
+	// Add an optional text prefix to all log strings
+	log.SetPrefix("[CATALOG] ")
+
 	if err := run(); err != nil {
 		log.Fatalf("Run Error: %v", err)
 	}

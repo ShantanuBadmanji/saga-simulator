@@ -14,8 +14,8 @@ import (
 
 	"github.com/ShantanuBadmanji/saga-simulator/backend/internal/platform/httpserver"
 	"github.com/ShantanuBadmanji/saga-simulator/backend/services/catalog/internal/api/rest"
+	"github.com/ShantanuBadmanji/saga-simulator/backend/services/catalog/internal/cfg"
 	"github.com/ShantanuBadmanji/saga-simulator/backend/services/catalog/internal/datasource/sqlite/sqlcgen"
-	"github.com/joho/godotenv"
 	_ "github.com/ncruces/go-sqlite3/driver"
 )
 
@@ -47,15 +47,16 @@ const (
 func run() error {
 	ctx := context.Background()
 
-	if err := godotenv.Load(); err != nil {
-		return fmt.Errorf("Error loading .env file: %w", err)
-	}
-
 	mux := http.NewServeMux()
 	registerBasicRoutes(mux)
 
-	dbPath := filepath.Join(os.Getenv("DB_DIR"), "catalog.db")
-	db, err := sql.Open("sqlite3", dbPath)
+	envCfg, err := cfg.LoadEnvConfig()
+	if err != nil {
+		return fmt.Errorf("failed to load environment variables: %w", err)
+	}
+	print(envCfg.SqliteDbDir)
+	dataSourceName := filepath.Join(envCfg.SqliteDbDir, "catalog.db")
+	db, err := sql.Open("sqlite3", dataSourceName)
 	if err != nil {
 		return fmt.Errorf("error connecting to db: %w", err)
 	}
@@ -72,7 +73,7 @@ func run() error {
 	rootMux.Handle("/catalog/", http.StripPrefix("/catalog", mux))
 
 	server := &http.Server{
-		Addr:    ":8080",
+		Addr:    fmt.Sprintf(":%d", envCfg.Port),
 		Handler: rootMux,
 	}
 

@@ -50,12 +50,12 @@ func run() error {
 	mux := http.NewServeMux()
 	registerBasicRoutes(mux)
 
-	envCfg, err := cfg.LoadEnvConfig()
+	envVars, err := cfg.LoadEnvVars()
 	if err != nil {
 		return fmt.Errorf("failed to load environment variables: %w", err)
 	}
-	print(envCfg.SqliteDbDir)
-	dataSourceName := filepath.Join(envCfg.SqliteDbDir, "catalog.db")
+	print(envVars.SqliteDbDir)
+	dataSourceName := filepath.Join(envVars.SqliteDbDir, "catalog.db")
 	db, err := sql.Open("sqlite3", dataSourceName)
 	if err != nil {
 		return fmt.Errorf("error connecting to db: %w", err)
@@ -73,7 +73,7 @@ func run() error {
 	rootMux.Handle("/catalog/", http.StripPrefix("/catalog", mux))
 
 	server := &http.Server{
-		Addr:    fmt.Sprintf(":%d", envCfg.Port),
+		Addr:    fmt.Sprintf(":%d", envVars.Port),
 		Handler: rootMux,
 	}
 

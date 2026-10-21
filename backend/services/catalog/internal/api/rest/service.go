@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 
+	"github.com/ShantanuBadmanji/saga-simulator/backend/internal/platform/httprequest"
 	"github.com/ShantanuBadmanji/saga-simulator/backend/services/catalog/internal/datasource"
 	"github.com/ShantanuBadmanji/saga-simulator/backend/services/catalog/internal/datasource/sqlite/sqlcgen"
 )
@@ -27,7 +28,7 @@ func (s *CatalogService) GetCategories(ctx context.Context, parentID string) ([]
 	return s.categoryRepo.ListCategories(ctx)
 }
 
-func (s *CatalogService) GetProducts(ctx context.Context, categoryID string, limit, offset int64) ([]sqlcgen.ListProductsWithSkusAscRow, error) {
+func (s *CatalogService) GetProducts(ctx context.Context, categoryID string, pagination httprequest.Pagination) ([]ProductOverview, int64, error) {
 
 	var nullableCategoryID sql.NullString
 	if len(categoryID) != 0 {
@@ -36,7 +37,29 @@ func (s *CatalogService) GetProducts(ctx context.Context, categoryID string, lim
 		nullableCategoryID = sql.NullString{Valid: false}
 	}
 
-	return s.productRepo.ListProductsWithSkusAsc(ctx, sqlcgen.ListProductsWithSkusAscParams{CategoryID: nullableCategoryID, Limit: limit, Offset: offset})
+	limit, offset := pagination.LimitOffset()
+	productRows, err := s.productRepo.ListProductsWithSkusAsc(ctx, sqlcgen.ListProductsWithSkusAscParams{
+		CategoryID: nullableCategoryID,
+		Limit:      limit,
+		Offset:     offset,
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+
+	var totalItems int64
+	if len(productRows) == 0 {
+		totalItems = 0
+	} else {
+		totalItems = productRows[0].TotalCount
+	}
+
+	productOverviews := make([]ProductOverview, len(productRows))
+	for i, r := range productRows {
+		productOverviews[i] = *NewProductOverviewFromRow(&r)
+	}
+
+	return productOverviews, totalItems, err
 }
 
 func (s *CatalogService) GetProductByID(ctx context.Context, id string) (*ProductDTO, error) {

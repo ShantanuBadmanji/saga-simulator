@@ -33,7 +33,8 @@ ranked_skus AS (
 SELECT
     p.*,
     s.id AS sku_id,
-    s.price_minor AS min_price
+    s.price_minor AS min_price,
+    COUNT(*) OVER () as total_count
 FROM filtered_products p
 JOIN ranked_skus s
     ON s.product_id = p.id

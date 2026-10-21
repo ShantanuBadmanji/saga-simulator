@@ -97,7 +97,8 @@ ranked_skus AS (
 SELECT
     p.id, p.name, p.slug, p.description, p.category_id, p.brand, p.status, p.created_at, p.updated_at,
     s.id AS sku_id,
-    s.price_minor AS min_price
+    s.price_minor AS min_price,
+    COUNT(*) OVER () as total_count
 FROM filtered_products p
 JOIN ranked_skus s
     ON s.product_id = p.id
@@ -124,6 +125,7 @@ type ListProductsWithSkusAscRow struct {
 	UpdatedAt   string         `json:"updated_at"`
 	SkuID       string         `json:"sku_id"`
 	MinPrice    int64          `json:"min_price"`
+	TotalCount  int64          `json:"total_count"`
 }
 
 func (q *Queries) ListProductsWithSkusAsc(ctx context.Context, arg ListProductsWithSkusAscParams) ([]ListProductsWithSkusAscRow, error) {
@@ -147,6 +149,7 @@ func (q *Queries) ListProductsWithSkusAsc(ctx context.Context, arg ListProductsW
 			&i.UpdatedAt,
 			&i.SkuID,
 			&i.MinPrice,
+			&i.TotalCount,
 		); err != nil {
 			return nil, err
 		}

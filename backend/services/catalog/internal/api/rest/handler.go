@@ -2,8 +2,17 @@ package rest
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
-	"strconv"
+
+	"github.com/ShantanuBadmanji/saga-simulator/backend/internal/platform/httprequest"
+	"github.com/ShantanuBadmanji/saga-simulator/backend/internal/platform/httpresponse"
+)
+
+const (
+	paramCategory = "category"
+	paramParent   = "parent"
+	pathID        = "id"
 )
 
 type CatalogHandler struct {
@@ -32,7 +41,7 @@ func (h *CatalogHandler) RegisterRoutes(mux *http.ServeMux) {
 func (h *CatalogHandler) listCategories(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 
-	catagories, err := h.catalogService.GetCategories(r.Context(), query.Get("parent"))
+	catagories, err := h.catalogService.GetCategories(r.Context(), query.Get(paramParent))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -46,53 +55,62 @@ func (h *CatalogHandler) listCategories(w http.ResponseWriter, r *http.Request) 
 
 func (h *CatalogHandler) listProducts(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	categoryID := query.Get("category")
-	limit, err := strconv.ParseInt(query.Get("limit"), 10, 64)
+	categoryID := query.Get(paramParent)
+	pagination, err := httprequest.ParsePagination(r)
 	if err != nil {
-		limit = 20
+		httpresponse.Error(w, http.StatusBadRequest, httpresponse.ErrorCodeInvalidQueryParams, err.Error())
+		return
 	}
-	offset, err := strconv.ParseInt(query.Get("offset"), 10, 64)
+	productOverviews, totalItems, err := h.catalogService.GetProducts(r.Context(), categoryID, pagination)
 	if err != nil {
-		offset = 0
-	}
-
-	productsWithSkus, err := h.catalogService.GetProducts(r.Context(), categoryID, limit, offset)
-
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-	} else {
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(productsWithSkus)
+		log.Printf("failed to get products: %v", err)
+		httpresponse.Error(w, http.StatusInternalServerError, httpresponse.ErrorCodeInternalServerError, "")
+		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	httpresponse.JSON(w,
+		http.StatusOK,
+		httpresponse.DataResponse{
+			Data: productOverviews,
+			Meta: httpresponse.NewPageMetaFromPagination(pagination, totalItems),
+		},
+	)
 }
 
 func (h *CatalogHandler) getProductByID(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
+	id := r.PathValue(pathID)
 
 	productDto, err := h.catalogService.GetProductByID(r.Context(), id)
-
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-	} else {
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(productDto)
+		log.Printf("failed to get product with ID %s: %v", id, err)
+		httpresponse.Error(w, http.StatusInternalServerError, httpresponse.ErrorCodeInternalServerError, "")
+		return
 	}
+
+	httpresponse.JSON(
+		w,
+		http.StatusOK,
+		httpresponse.DataResponse{
+			Data: productDto,
+		},
+	)
 }
 
 func (h *CatalogHandler) getSkuByID(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
+	id := r.PathValue(pathID)
 
 	sku, err := h.catalogService.getSkuByID(r.Context(), id)
-
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-	} else {
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(sku)
+		log.Printf("failed to get sku with ID %s: %v", id, err)
+		httpresponse.Error(w, http.StatusInternalServerError, httpresponse.ErrorCodeInternalServerError, "")
+		return
 	}
+
+	httpresponse.JSON(
+		w,
+		http.StatusOK,
+		httpresponse.DataResponse{
+			Data: sku,
+		},
+	)
 }

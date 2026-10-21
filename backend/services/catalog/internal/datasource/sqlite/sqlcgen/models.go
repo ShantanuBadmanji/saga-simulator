@@ -51,6 +51,7 @@ type Sku struct {
 	Currency          string `json:"currency"`
 	Active            int64  `json:"active"`
 	AvailableQuantity int64  `json:"available_quantity"`
+	QuantityUpdatedAt string `json:"quantity_updated_at"`
 	CreatedAt         string `json:"created_at"`
 	UpdatedAt         string `json:"updated_at"`
 }

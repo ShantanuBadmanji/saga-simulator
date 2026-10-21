@@ -1,8 +1,6 @@
 package cfg
 
 import (
-	"fmt"
-
 	"github.com/ShantanuBadmanji/saga-simulator/backend/internal/platform/env"
 	"github.com/joho/godotenv"
 )
@@ -13,9 +11,8 @@ type EnvVars struct {
 }
 
 func LoadEnvVars() (*EnvVars, error) {
-	if err := godotenv.Load(); err != nil {
-		return nil, fmt.Errorf("load .env file: %w", err)
-	}
+	// Optional: .env overrides nothing if vars already set in environment
+	_ = godotenv.Load()
 
 	dbDir, err := env.String(env.SqliteDbDir, nil)
 	if err != nil {

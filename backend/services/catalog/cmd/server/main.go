@@ -54,7 +54,6 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("failed to load environment variables: %w", err)
 	}
-	print(envVars.SqliteDbDir)
 	dataSourceName := filepath.Join(envVars.SqliteDbDir, "catalog.db")
 	db, err := sql.Open("sqlite3", dataSourceName)
 	if err != nil {

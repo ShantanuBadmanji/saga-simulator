@@ -43,16 +43,8 @@ type CursorMeta struct {
 	HasMore    bool   `json:"hasMore"`
 }
 
-type ErrorCode string
-
-const (
-	ErrorCodeInternalServerError = ErrorCode("INTERNAL_SERVER_ERROR")
-	ErrorCodeInvalidQueryParams  = ErrorCode("INVALID_QUERY_PARAMS")
-)
-
 type ErrorDetail struct {
-	Code    ErrorCode `json:"code,omitempty"`
-	Message string    `json:"message"`
+	Message string `json:"message"`
 }
 
 type ErrorResponse struct {
@@ -81,7 +73,6 @@ func JSON(w http.ResponseWriter, status int, body any) {
 func Error(
 	w http.ResponseWriter,
 	status int,
-	code ErrorCode,
 	message string,
 ) {
 	if message == "" {
@@ -90,7 +81,6 @@ func Error(
 
 	JSON(w, status, ErrorResponse{
 		Error: ErrorDetail{
-			Code:    code,
 			Message: message,
 		},
 	})

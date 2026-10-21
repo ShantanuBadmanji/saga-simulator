@@ -20,7 +20,7 @@ func NewCatalogService(categoryRepo datasource.CategoryRepository, productRepo d
 	return &CatalogService{categoryRepo, productRepo, skuRepo}
 }
 
-func (s *CatalogService) GetCategories(ctx context.Context, parentID string) ([]sqlcgen.Category, error) {
+func (s *CatalogService) getCategories(ctx context.Context, parentID string) ([]sqlcgen.Category, error) {
 	if len(parentID) != 0 {
 		return s.categoryRepo.ListSubCategories(ctx, sql.NullString{String: parentID, Valid: true})
 	}
@@ -28,7 +28,7 @@ func (s *CatalogService) GetCategories(ctx context.Context, parentID string) ([]
 	return s.categoryRepo.ListCategories(ctx)
 }
 
-func (s *CatalogService) GetProducts(ctx context.Context, categoryID string, pagination httprequest.Pagination) ([]ProductOverview, int64, error) {
+func (s *CatalogService) getProducts(ctx context.Context, categoryID string, pagination httprequest.Pagination) ([]ProductOverview, int64, error) {
 
 	var nullableCategoryID sql.NullString
 	if len(categoryID) != 0 {
@@ -62,7 +62,7 @@ func (s *CatalogService) GetProducts(ctx context.Context, categoryID string, pag
 	return productOverviews, totalItems, err
 }
 
-func (s *CatalogService) GetProductByID(ctx context.Context, id string) (*ProductDTO, error) {
+func (s *CatalogService) getProductByID(ctx context.Context, id string) (*ProductDTO, error) {
 	product, err := s.productRepo.GetProductByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -74,7 +74,7 @@ func (s *CatalogService) GetProductByID(ctx context.Context, id string) (*Produc
 		return nil, err
 	}
 
-	return &ProductDTO{&product, media, skus}, nil
+	return NewProductDTO(&product, media, skus), nil
 }
 
 func (s *CatalogService) getSkuByID(ctx context.Context, id string) (*sqlcgen.Sku, error) {

@@ -1,7 +1,8 @@
 package rest
 
 import (
-	"encoding/json"
+	"database/sql"
+	"errors"
 	"log"
 	"net/http"
 
@@ -41,16 +42,17 @@ func (h *CatalogHandler) RegisterRoutes(mux *http.ServeMux) {
 func (h *CatalogHandler) listCategories(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 
-	catagories, err := h.catalogService.GetCategories(r.Context(), query.Get(paramParent))
+	categories, err := h.catalogService.getCategories(r.Context(), query.Get(paramParent))
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-	} else {
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(catagories)
+		log.Printf("failed to get categories: %v", err)
+		httpresponse.Error(w, http.StatusInternalServerError, "")
+		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	httpresponse.JSON(w,
+		http.StatusOK,
+		httpresponse.DataResponse{Data: categories},
+	)
 }
 
 func (h *CatalogHandler) listProducts(w http.ResponseWriter, r *http.Request) {
@@ -58,13 +60,13 @@ func (h *CatalogHandler) listProducts(w http.ResponseWriter, r *http.Request) {
 	categoryID := query.Get(paramParent)
 	pagination, err := httprequest.ParsePagination(r)
 	if err != nil {
-		httpresponse.Error(w, http.StatusBadRequest, httpresponse.ErrorCodeInvalidQueryParams, err.Error())
+		httpresponse.Error(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	productOverviews, totalItems, err := h.catalogService.GetProducts(r.Context(), categoryID, pagination)
+	productOverviews, totalItems, err := h.catalogService.getProducts(r.Context(), categoryID, pagination)
 	if err != nil {
 		log.Printf("failed to get products: %v", err)
-		httpresponse.Error(w, http.StatusInternalServerError, httpresponse.ErrorCodeInternalServerError, "")
+		httpresponse.Error(w, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -80,10 +82,15 @@ func (h *CatalogHandler) listProducts(w http.ResponseWriter, r *http.Request) {
 func (h *CatalogHandler) getProductByID(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue(pathID)
 
-	productDto, err := h.catalogService.GetProductByID(r.Context(), id)
+	productDto, err := h.catalogService.getProductByID(r.Context(), id)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			httpresponse.Error(w, http.StatusNotFound, "")
+			return
+		}
+
 		log.Printf("failed to get product with ID %s: %v", id, err)
-		httpresponse.Error(w, http.StatusInternalServerError, httpresponse.ErrorCodeInternalServerError, "")
+		httpresponse.Error(w, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -102,7 +109,7 @@ func (h *CatalogHandler) getSkuByID(w http.ResponseWriter, r *http.Request) {
 	sku, err := h.catalogService.getSkuByID(r.Context(), id)
 	if err != nil {
 		log.Printf("failed to get sku with ID %s: %v", id, err)
-		httpresponse.Error(w, http.StatusInternalServerError, httpresponse.ErrorCodeInternalServerError, "")
+		httpresponse.Error(w, http.StatusInternalServerError, "")
 		return
 	}
 

@@ -10,7 +10,7 @@ import (
 )
 
 const getSkuByID = `-- name: GetSkuByID :one
-SELECT id, product_id, sku_code, attributes, price_minor, currency, active, available_quantity, created_at, updated_at FROM sku WHERE id = ?1
+SELECT id, product_id, sku_code, attributes, price_minor, currency, active, available_quantity, quantity_updated_at, created_at, updated_at FROM sku WHERE id = ?1
 `
 
 func (q *Queries) GetSkuByID(ctx context.Context, id string) (Sku, error) {
@@ -25,6 +25,7 @@ func (q *Queries) GetSkuByID(ctx context.Context, id string) (Sku, error) {
 		&i.Currency,
 		&i.Active,
 		&i.AvailableQuantity,
+		&i.QuantityUpdatedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -32,7 +33,7 @@ func (q *Queries) GetSkuByID(ctx context.Context, id string) (Sku, error) {
 }
 
 const getSkuBySkuCode = `-- name: GetSkuBySkuCode :one
-SELECT id, product_id, sku_code, attributes, price_minor, currency, active, available_quantity, created_at, updated_at FROM sku WHERE sku_code = ?1
+SELECT id, product_id, sku_code, attributes, price_minor, currency, active, available_quantity, quantity_updated_at, created_at, updated_at FROM sku WHERE sku_code = ?1
 `
 
 func (q *Queries) GetSkuBySkuCode(ctx context.Context, skuCode string) (Sku, error) {
@@ -47,6 +48,7 @@ func (q *Queries) GetSkuBySkuCode(ctx context.Context, skuCode string) (Sku, err
 		&i.Currency,
 		&i.Active,
 		&i.AvailableQuantity,
+		&i.QuantityUpdatedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -54,7 +56,7 @@ func (q *Queries) GetSkuBySkuCode(ctx context.Context, skuCode string) (Sku, err
 }
 
 const listSkusByProductID = `-- name: ListSkusByProductID :many
-SELECT id, product_id, sku_code, attributes, price_minor, currency, active, available_quantity, created_at, updated_at FROM sku WHERE product_id = ?1
+SELECT id, product_id, sku_code, attributes, price_minor, currency, active, available_quantity, quantity_updated_at, created_at, updated_at FROM sku WHERE product_id = ?1
 `
 
 func (q *Queries) ListSkusByProductID(ctx context.Context, productID string) ([]Sku, error) {
@@ -75,6 +77,7 @@ func (q *Queries) ListSkusByProductID(ctx context.Context, productID string) ([]
 			&i.Currency,
 			&i.Active,
 			&i.AvailableQuantity,
+			&i.QuantityUpdatedAt,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {

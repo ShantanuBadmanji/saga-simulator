@@ -1,4 +1,7 @@
 #!/bin/sh
+# Exit immediately if a command exits with a non-zero status
+set -e
+
 DB_ENGINE=sqlite3
 
 echo "migrating the DBs to the most recent version available..."

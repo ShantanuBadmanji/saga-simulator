@@ -2,8 +2,6 @@ syntax = "proto3";
 
 package inventory.v1;
 
-option go_package = ";inventoryv1";
-
 service Inventory {
   rpc Reserve(ReserveRequest) returns (ReserveResponse);
   rpc Release(ReleaseRequest) returns (ReleaseResponse);

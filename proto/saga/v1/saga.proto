@@ -2,8 +2,6 @@ syntax = "proto3";
 
 package saga.v1;
 
-option go_package = ";sagav1";
-
 service Saga {
   rpc StartSaga(StartSagaRequest) returns (StartSagaResponse);
   rpc GetSaga(GetSagaRequest) returns (GetSagaResponse);

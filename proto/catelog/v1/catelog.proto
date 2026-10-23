@@ -2,8 +2,6 @@ syntax = "proto3";
 
 package catalog.v1;
 
-option go_package = ";catalogv1";
-
 service Catelog {
   rpc GetSKUPrice(GetSKUPriceRequest) returns (GetSKUPriceResponse);
 }

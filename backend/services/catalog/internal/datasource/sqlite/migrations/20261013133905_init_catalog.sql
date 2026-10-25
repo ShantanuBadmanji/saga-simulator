@@ -14,6 +14,15 @@ CREATE TABLE
 
 CREATE INDEX idx_category_parent ON category (parent_id);
 
+-- Seed categories
+INSERT INTO category (id, parent_id, name, slug) VALUES
+    ('cat-electronics', NULL, 'Electronics', 'electronics'),
+    ('cat-mobiles', 'cat-electronics', 'Mobile Phones', 'mobile-phones'),
+    ('cat-accessories', 'cat-electronics', 'Accessories', 'accessories'),
+    ('cat-fashion', NULL, 'Fashion', 'fashion'),
+    ('cat-mens-clothing', 'cat-fashion', 'Mens Clothing', 'mens-clothing');
+
+
 CREATE TABLE
     product (
         id TEXT PRIMARY KEY NOT NULL,
@@ -31,6 +40,47 @@ CREATE INDEX idx_product_category ON product (category_id);
 
 CREATE INDEX idx_product_status ON product (status);
 
+-- Seed products
+INSERT INTO product (
+    id, name, slug, description, category_id, brand, status
+) VALUES
+    (
+        'prod-iphone-15',
+        'iPhone 15',
+        'iphone-15',
+        'Apple smartphone with 128GB storage.',
+        'cat-mobiles',
+        'Apple',
+        'ACTIVE'
+    ),
+    (
+        'prod-samsung-s24',
+        'Samsung Galaxy S24',
+        'samsung-galaxy-s24',
+        'Samsung flagship smartphone with 256GB storage.',
+        'cat-mobiles',
+        'Samsung',
+        'ACTIVE'
+    ),
+    (
+        'prod-usb-c-cable',
+        'USB-C Cable',
+        'usb-c-cable',
+        'Fast charging USB-C cable, 1 meter.',
+        'cat-accessories',
+        'Anker',
+        'ACTIVE'
+    ),
+    (
+        'prod-cotton-tshirt',
+        'Cotton T-Shirt',
+        'cotton-tshirt',
+        'Regular-fit cotton T-shirt.',
+        'cat-mens-clothing',
+        'Basics',
+        'DRAFT'
+    );
+
 CREATE TABLE
     sku (
         id TEXT PRIMARY KEY NOT NULL,
@@ -47,6 +97,79 @@ CREATE TABLE
     );
 
 CREATE INDEX idx_sku_product ON sku (product_id);
+
+-- Seed SKUs
+-- price_minor is in paise: 79900 = INR 799.00
+INSERT INTO sku (
+    id,
+    product_id,
+    sku_code,
+    attributes,
+    price_minor,
+    currency,
+    active,
+    available_quantity
+) VALUES
+    (
+        'sku-iphone-15-black-128',
+        'prod-iphone-15',
+        'IPHONE15-BLK-128',
+        '{"color":"Black","storage":"128GB"}',
+        6990000,
+        'INR',
+        1,
+        25
+    ),
+    (
+        'sku-iphone-15-blue-128',
+        'prod-iphone-15',
+        'IPHONE15-BLU-128',
+        '{"color":"Blue","storage":"128GB"}',
+        6990000,
+        'INR',
+        1,
+        15
+    ),
+    (
+        'sku-samsung-s24-gray-256',
+        'prod-samsung-s24',
+        'S24-GRY-256',
+        '{"color":"Gray","storage":"256GB"}',
+        7999900,
+        'INR',
+        1,
+        20
+    ),
+    (
+        'sku-usb-c-1m',
+        'prod-usb-c-cable',
+        'USB-C-1M',
+        '{"color":"Black","length":"1m"}',
+        79900,
+        'INR',
+        1,
+        100
+    ),
+    (
+        'sku-tshirt-black-m',
+        'prod-cotton-tshirt',
+        'TSHIRT-BLK-M',
+        '{"color":"Black","size":"M"}',
+        49900,
+        'INR',
+        0,
+        50
+    ),
+    (
+        'sku-tshirt-black-l',
+        'prod-cotton-tshirt',
+        'TSHIRT-BLK-L',
+        '{"color":"Black","size":"L"}',
+        49900,
+        'INR',
+        0,
+        30
+    );
 
 -- CREATE TABLE
 --     price_history (
@@ -70,6 +193,40 @@ CREATE TABLE
     );
 
 CREATE INDEX idx_product_media_product ON product_media (product_id, sort_order);
+
+-- Seed product media
+INSERT INTO product_media (
+    id, product_id, kind, url, sort_order
+) VALUES
+    (
+        'media-iphone-15-1',
+        'prod-iphone-15',
+        'IMAGE',
+        'https://m.media-amazon.com/images/I/61135j8fPJL._SL1500_.jpg',
+        0
+    ),
+    (
+        'media-iphone-15-2',
+        'prod-iphone-15',
+        'IMAGE',
+        'https://m.media-amazon.com/images/I/712SuRmHG4L._SL1500_.jpg',
+        1
+    ),
+    (
+        'media-samsung-s24-1',
+        'prod-samsung-s24',
+        'IMAGE',
+        'https://m.media-amazon.com/images/I/71AlmDfE-WL._SL1500_.jpg',
+        0
+    ),
+    (
+        'media-usb-c-1',
+        'prod-usb-c-cable',
+        'IMAGE',
+        'https://m.media-amazon.com/images/I/51ljcNLVdWL._SL1100_.jpg',
+        0
+    );
+
 
 -- Publishes product/price changes to search indexes and caches.
 -- CREATE TABLE

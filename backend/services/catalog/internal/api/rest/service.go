@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"log/slog"
 
 	"github.com/ShantanuBadmanji/saga-simulator/backend/internal/platform/httprequest"
 	"github.com/ShantanuBadmanji/saga-simulator/backend/services/catalog/internal/datasource"
@@ -14,10 +15,11 @@ type CatalogService struct {
 	categoryRepo datasource.CategoryRepository
 	productRepo  datasource.ProductRepository
 	skuRepo      datasource.SkuRepository
+	log          *slog.Logger
 }
 
-func NewCatalogService(categoryRepo datasource.CategoryRepository, productRepo datasource.ProductRepository, skuRepo datasource.SkuRepository) *CatalogService {
-	return &CatalogService{categoryRepo, productRepo, skuRepo}
+func NewCatalogService(categoryRepo datasource.CategoryRepository, productRepo datasource.ProductRepository, skuRepo datasource.SkuRepository, logger *slog.Logger) *CatalogService {
+	return &CatalogService{categoryRepo, productRepo, skuRepo, logger}
 }
 
 func (s *CatalogService) getCategories(ctx context.Context, parentID string) ([]sqlcgen.Category, error) {

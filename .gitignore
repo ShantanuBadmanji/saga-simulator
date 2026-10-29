@@ -5,3 +5,5 @@
 /docs/
 
 .env
+
+*.log

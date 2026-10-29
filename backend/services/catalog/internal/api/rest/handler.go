@@ -3,7 +3,7 @@ package rest
 import (
 	"database/sql"
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 
 	"github.com/ShantanuBadmanji/saga-simulator/backend/internal/platform/httprequest"
@@ -18,12 +18,13 @@ const (
 
 type CatalogHandler struct {
 	catalogService *CatalogService
+	log            *slog.Logger
 }
 
-// NewCatalogHandler creates a new instance of CatalogController.
-func NewCatalogHandler(catalogService *CatalogService) *CatalogHandler {
+func NewCatalogHandler(catalogService *CatalogService, logger *slog.Logger) *CatalogHandler {
 	return &CatalogHandler{
 		catalogService: catalogService,
+		log:            logger,
 	}
 }
 
@@ -38,13 +39,12 @@ func (h *CatalogHandler) RegisterRoutes(mux *http.ServeMux) {
 
 }
 
-// GetCatalog handles the request to retrieve the catalog.
 func (h *CatalogHandler) listCategories(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 
 	categories, err := h.catalogService.getCategories(r.Context(), query.Get(paramParent))
 	if err != nil {
-		log.Printf("failed to get categories: %v", err)
+		h.log.ErrorContext(r.Context(), "failed to get categories", "error", err)
 		httpresponse.Error(w, http.StatusInternalServerError, "")
 		return
 	}
@@ -65,7 +65,7 @@ func (h *CatalogHandler) listProducts(w http.ResponseWriter, r *http.Request) {
 	}
 	productOverviews, totalItems, err := h.catalogService.getProducts(r.Context(), categoryID, pagination)
 	if err != nil {
-		log.Printf("failed to get products: %v", err)
+		h.log.ErrorContext(r.Context(), "failed to get products", "error", err)
 		httpresponse.Error(w, http.StatusInternalServerError, "")
 		return
 	}
@@ -89,7 +89,7 @@ func (h *CatalogHandler) getProductByID(w http.ResponseWriter, r *http.Request) 
 			return
 		}
 
-		log.Printf("failed to get product with ID %s: %v", id, err)
+		h.log.ErrorContext(r.Context(), "failed to get product", "id", id, "error", err)
 		httpresponse.Error(w, http.StatusInternalServerError, "")
 		return
 	}
@@ -108,7 +108,7 @@ func (h *CatalogHandler) getSkuByID(w http.ResponseWriter, r *http.Request) {
 
 	sku, err := h.catalogService.getSkuByID(r.Context(), id)
 	if err != nil {
-		log.Printf("failed to get sku with ID %s: %v", id, err)
+		h.log.ErrorContext(r.Context(), "failed to get sku", "id", id, "error", err)
 		httpresponse.Error(w, http.StatusInternalServerError, "")
 		return
 	}

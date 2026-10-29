@@ -4,15 +4,18 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"runtime"
 	"syscall"
 	"time"
 
 	"github.com/ShantanuBadmanji/saga-simulator/backend/internal/platform/httpserver"
+	"github.com/ShantanuBadmanji/saga-simulator/backend/internal/platform/logging"
+	"github.com/ShantanuBadmanji/saga-simulator/backend/internal/platform/requestid"
 	"github.com/ShantanuBadmanji/saga-simulator/backend/services/catalog/internal/api/rest"
 	"github.com/ShantanuBadmanji/saga-simulator/backend/services/catalog/internal/cfg"
 	"github.com/ShantanuBadmanji/saga-simulator/backend/services/catalog/internal/datasource/sqlite/sqlcgen"
@@ -34,7 +37,7 @@ func registerBasicRoutes(mux *http.ServeMux) {
 		case <-time.After(100 * time.Second):
 			fmt.Fprintln(w, "ok")
 		case <-r.Context().Done():
-			log.Println("Long request canceled:", r.Context().Err())
+			slog.InfoContext(r.Context(), "long request canceled", "cause", r.Context().Err())
 		}
 	})
 
@@ -44,16 +47,12 @@ const (
 	httpShutdownGracePeriod time.Duration = 10 * time.Second
 )
 
-func run() error {
+func run(logger *slog.Logger, envVars *cfg.EnvVars) error {
 	ctx := context.Background()
 
 	mux := http.NewServeMux()
 	registerBasicRoutes(mux)
 
-	envVars, err := cfg.LoadEnvVars()
-	if err != nil {
-		return fmt.Errorf("failed to load environment variables: %w", err)
-	}
 	dataSourceName := filepath.Join(envVars.SqliteDbDir, "catalog.db")
 	db, err := sql.Open("sqlite3", dataSourceName)
 	if err != nil {
@@ -64,8 +63,8 @@ func run() error {
 	}
 	queries := sqlcgen.New(db)
 
-	service := rest.NewCatalogService(queries, queries, queries)
-	handler := rest.NewCatalogHandler(service)
+	service := rest.NewCatalogService(queries, queries, queries, logger)
+	handler := rest.NewCatalogHandler(service, logger)
 	handler.RegisterRoutes(mux)
 
 	rootMux := http.NewServeMux()
@@ -73,7 +72,7 @@ func run() error {
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", envVars.Port),
-		Handler: rootMux,
+		Handler: requestid.RequestIDMiddleware(rootMux),
 	}
 
 	// Cancel the context when an interrupt or termination signal is received.
@@ -84,17 +83,33 @@ func run() error {
 	)
 	defer stopIntercepting()
 
-	return httpserver.Run(ctx, server, httpShutdownGracePeriod)
+	return httpserver.Run(ctx, server, httpShutdownGracePeriod, logger)
 }
 
 func main() {
-	// Configure flags for date, time, and file location
-	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+	// Set RootDir for relative source paths in log records.
+	// Cosmetic only — does not affect where log files are written.
+	_, filename, _, _ := runtime.Caller(0)
+	if root, err := logging.FindModuleRoot(filename); err == nil {
+		logging.RootDir = root
+	}
 
-	// Add an optional text prefix to all log strings
-	log.SetPrefix("[CATALOG] ")
+	envVars, err := cfg.LoadEnvVars()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to load environment variables: %v\n", err)
+		os.Exit(1)
+	}
 
-	if err := run(); err != nil {
-		log.Fatalf("Run Error: %v", err)
+	logger, logCloser, err := logging.New("catalog", envVars.LogDir, logging.TextHandler)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to initialize logger: %v\n", err)
+		os.Exit(1)
+	}
+	defer logCloser.Close()
+	slog.SetDefault(logger)
+
+	if err := run(logger, envVars); err != nil {
+		logger.Error("run error", "error", err)
+		os.Exit(1)
 	}
 }

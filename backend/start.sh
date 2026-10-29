@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Exit immediately if a command exits with a non-zero status
 set -e
 
@@ -26,7 +26,7 @@ echo "created binaries: output=out/*"
 echo ""
 
 echo "executing all the binaries..."
-./out/catalog &
+./out/catalog > >(sed 's/^/[catalog] /') 2>&1 &
 catalog_pid=$!
 
 
@@ -60,7 +60,6 @@ fi
 echo "Catalog are running."
 echo "Press Ctrl+C to stop the services."
 echo ""
-
 
 # keep this shell alive while waiting for both services to exit.
 wait "$catalog_pid" || true

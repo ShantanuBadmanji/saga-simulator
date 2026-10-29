@@ -3,7 +3,7 @@ package httpresponse
 import (
 	"bytes"
 	"encoding/json"
-	"log"
+	"log/slog"
 	"net/http"
 
 	"github.com/ShantanuBadmanji/saga-simulator/backend/internal/platform/httprequest"
@@ -55,7 +55,7 @@ func JSON(w http.ResponseWriter, status int, body any) {
 	var buf bytes.Buffer
 
 	if err := json.NewEncoder(&buf).Encode(body); err != nil {
-		log.Printf("failed to encode JSON response: %v", err)
+		slog.Error("failed to encode JSON response", "error", err)
 		code := http.StatusInternalServerError
 		http.Error(
 			w, http.StatusText(code), code)
@@ -66,7 +66,7 @@ func JSON(w http.ResponseWriter, status int, body any) {
 	w.WriteHeader(status)
 
 	if _, err := w.Write(buf.Bytes()); err != nil {
-		log.Printf("failed to write JSON response: %v", err)
+		slog.Error("failed to write JSON response", "error", err)
 	}
 }
 

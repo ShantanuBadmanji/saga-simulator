@@ -4,64 +4,64 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"time"
 )
 
-func serveHTTP(server *http.Server, errCh chan<- error) {
-	log.Println("Starting HTTP server on", server.Addr)
-	errCh <- server.ListenAndServe() // not a blocking send, since the channel has a buffer of 1
+func serveHTTP(server *http.Server, logger *slog.Logger, errCh chan<- error) {
+	logger.Info("starting HTTP server", "addr", server.Addr)
+	errCh <- server.ListenAndServe()
 	close(errCh)
 }
 
-func shutdownServer(server *http.Server, shutdownGracePeriod time.Duration) error {
+func shutdownServer(server *http.Server, shutdownGracePeriod time.Duration, logger *slog.Logger) error {
 	shutdownCtx, cancel := context.WithTimeout(
 		context.Background(),
 		shutdownGracePeriod,
 	)
 	defer cancel()
 
-	log.Printf("Initiating graceful shutdown")
+	logger.Info("initiating graceful shutdown")
 	if err := server.Shutdown(shutdownCtx); err != nil {
 		err = fmt.Errorf("failed to gracefully shut down HTTP server: %w", err)
-		log.Println(err)
+		logger.Error("graceful shutdown failed", "error", err)
 
-		log.Println("Attempting to forcibly close HTTP server")
+		logger.Warn("attempting to forcibly close HTTP server")
 		if closeErr := server.Close(); closeErr != nil {
 			closeErr = fmt.Errorf("failed to forcibly close HTTP server: %w", closeErr)
-			log.Println(closeErr)
+			logger.Error("force close failed", "error", closeErr)
 			return errors.Join(err, closeErr)
 		}
 
 		return err
 	}
 
-	log.Println("HTTP server shut down gracefully")
+	logger.Info("HTTP server shut down gracefully")
 	return nil
 }
 
-func Run(ctx context.Context, server *http.Server, shutdownGracePeriod time.Duration) error {
+func Run(ctx context.Context, server *http.Server, shutdownGracePeriod time.Duration, logger *slog.Logger) error {
 
 	servingErrCh := make(chan error, 1)
-	go serveHTTP(server, servingErrCh)
+	go serveHTTP(server, logger, servingErrCh)
 
 	select {
 	case serveErr := <-servingErrCh:
 		if errors.Is(serveErr, http.ErrServerClosed) {
-			log.Println("HTTP server was already shut down or closed.")
+			logger.Info("HTTP server was already shut down or closed")
 			return nil
 		}
 		serveErr = fmt.Errorf("HTTP server failed during startup: %w", serveErr)
-		log.Println(serveErr)
+		logger.Error("HTTP server failed during startup", "error", serveErr)
 
-		log.Println("Attempting to drain any remaining active requests.")
-		return errors.Join(serveErr, shutdownServer(server, shutdownGracePeriod))
+		logger.Info("attempting to drain remaining active requests")
+		return errors.Join(serveErr, shutdownServer(server, shutdownGracePeriod, logger))
 	case <-ctx.Done():
-		log.Printf("Signal interception loop ended. Cause: %v", context.Cause(ctx))
+		logger.Info("signal received", "cause", context.Cause(ctx))
 	}
 
-	shutdownErr := shutdownServer(server, shutdownGracePeriod)
+	shutdownErr := shutdownServer(server, shutdownGracePeriod, logger)
 
 	if serveErr := <-servingErrCh; !errors.Is(serveErr, http.ErrServerClosed) {
 		return errors.Join(shutdownErr, fmt.Errorf("HTTP server failed during shutdown: %w", serveErr))

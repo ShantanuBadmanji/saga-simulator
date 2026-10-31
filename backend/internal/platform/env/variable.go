@@ -3,7 +3,7 @@ package env
 type envVar string
 
 const (
-	SqliteDbDir = envVar("SQLITE_DB_DIR")
-	Port        = envVar("PORT")
-	LogDir      = envVar("LOG_DIR")
+	SQLITE_DB_DIR = envVar("SQLITE_DB_DIR")
+	PORT          = envVar("PORT")
+	LOG_DIR       = envVar("LOG_DIR")
 )

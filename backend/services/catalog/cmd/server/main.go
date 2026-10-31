@@ -53,7 +53,7 @@ func run(logger *slog.Logger, envVars *cfg.EnvVars) error {
 	mux := http.NewServeMux()
 	registerBasicRoutes(mux)
 
-	dataSourceName := filepath.Join(envVars.SqliteDbDir, "catalog.db")
+	dataSourceName := filepath.Join(envVars.SQLITE_DB_DIR, "catalog.db")
 	db, err := sql.Open("sqlite3", dataSourceName)
 	if err != nil {
 		return fmt.Errorf("error connecting to db: %w", err)
@@ -71,7 +71,7 @@ func run(logger *slog.Logger, envVars *cfg.EnvVars) error {
 	rootMux.Handle("/catalog/", http.StripPrefix("/catalog", mux))
 
 	server := &http.Server{
-		Addr:    fmt.Sprintf(":%d", envVars.Port),
+		Addr:    fmt.Sprintf(":%d", envVars.PORT),
 		Handler: requestid.RequestIDMiddleware(rootMux),
 	}
 
@@ -87,12 +87,6 @@ func run(logger *slog.Logger, envVars *cfg.EnvVars) error {
 }
 
 func main() {
-	// Set RootDir for relative source paths in log records.
-	// Cosmetic only — does not affect where log files are written.
-	_, filename, _, _ := runtime.Caller(0)
-	if root, err := logging.FindModuleRoot(filename); err == nil {
-		logging.RootDir = root
-	}
 
 	envVars, err := cfg.LoadEnvVars()
 	if err != nil {
@@ -100,7 +94,20 @@ func main() {
 		os.Exit(1)
 	}
 
-	logger, logCloser, err := logging.New("catalog", envVars.LogDir, logging.TextHandler)
+	appCfg := cfg.NewAppConfig(envVars.IsDev())
+
+	// moduleRoot shortens source paths in log records to be relative to the module root.
+	// If go.mod cannot be found (e.g. trimmed paths in production), source paths fall
+	// back to absolute — cosmetic degradation only, not a startup error.
+	_, filename, _, _ := runtime.Caller(0)
+	moduleRoot, _ := logging.FindModuleRoot(filename)
+
+	logLevel := slog.LevelInfo
+	if appCfg.IsDev {
+		logLevel = slog.LevelDebug
+	}
+
+	logger, logCloser, err := logging.New("catalog", envVars.LOG_DIR, moduleRoot, logging.TextHandler, logLevel)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to initialize logger: %v\n", err)
 		os.Exit(1)

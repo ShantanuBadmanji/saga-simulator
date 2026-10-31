@@ -9,10 +9,6 @@ import (
 	"time"
 )
 
-// RootDir shortens source file paths in log records to be relative to the module root.
-// Set this before calling New. Use FindModuleRoot to derive it safely from runtime.Caller.
-var RootDir string
-
 // FindModuleRoot walks up from the given source file path until it finds a go.mod,
 // returning that directory as the module root. Safe to call with runtime.Caller(0).
 func FindModuleRoot(sourceFile string) (string, error) {
@@ -38,10 +34,10 @@ const (
 )
 
 // New creates a structured logger that writes to both stdout and {logDir}/{serviceName}.log.
-// It formats timestamps as RFC3339, adds source locations relative to RootDir, and enriches
-// records with context values via ContextHandler.
+// It formats timestamps as RFC3339, adds source locations relative to moduleRoot (pass empty string
+// to use absolute paths), and enriches records with context values via ContextHandler.
 // The caller must close the returned io.Closer on shutdown.
-func New(serviceName, logDir string, handlerType HandlerType) (*slog.Logger, io.Closer, error) {
+func New(serviceName, logDir, moduleRoot string, handlerType HandlerType, level slog.Level) (*slog.Logger, io.Closer, error) {
 	if err := os.MkdirAll(logDir, 0755); err != nil {
 		return nil, nil, err
 	}
@@ -59,11 +55,12 @@ func New(serviceName, logDir string, handlerType HandlerType) (*slog.Logger, io.
 				a.Value = slog.StringValue(a.Value.Time().Format(time.RFC3339))
 			case slog.SourceKey:
 				if source, ok := a.Value.Any().(*slog.Source); ok {
-					a.Value = slog.StringValue(formatSourcePath(source))
+					a.Value = slog.StringValue(formatSourcePath(source, moduleRoot))
 				}
 			}
 			return a
 		},
+		Level: level,
 	}
 
 	var stdoutHandler slog.Handler
@@ -82,14 +79,14 @@ func New(serviceName, logDir string, handlerType HandlerType) (*slog.Logger, io.
 	return slog.New(NewContextHandler(handler)), f, nil
 }
 
-func formatSourcePath(source *slog.Source) string {
+func formatSourcePath(source *slog.Source, moduleRoot string) string {
 	if source == nil {
 		return ""
 	}
-	if RootDir == "" {
+	if moduleRoot == "" {
 		return fmt.Sprintf("%s:%d", source.File, source.Line)
 	}
-	rel, err := filepath.Rel(RootDir, source.File)
+	rel, err := filepath.Rel(moduleRoot, source.File)
 	if err != nil {
 		return fmt.Sprintf("%s:%d", source.File, source.Line)
 	}

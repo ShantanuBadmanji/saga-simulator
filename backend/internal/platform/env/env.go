@@ -7,7 +7,7 @@ import (
 	"strconv"
 )
 
-var ErrRequiredEnvNotSet = errors.New("required environment variable not set")
+var ErrEnvNotSet = errors.New("environment variable not set")
 
 func lookupEnv(key envVar) (string, bool) {
 	return os.LookupEnv(string(key))
@@ -23,7 +23,7 @@ func String(key envVar, fallback *string) (string, error) {
 		return *fallback, nil
 	}
 
-	return "", fmt.Errorf("%q: %w", key, ErrRequiredEnvNotSet)
+	return "", fmt.Errorf("%q: %w", key, ErrEnvNotSet)
 }
 
 func Int(key envVar, fallback *int) (int, error) {
@@ -32,7 +32,7 @@ func Int(key envVar, fallback *int) (int, error) {
 		if fallback != nil {
 			return *fallback, nil
 		}
-		return 0, fmt.Errorf("%q: %w", key, ErrRequiredEnvNotSet)
+		return 0, fmt.Errorf("%q: %w", key, ErrEnvNotSet)
 	}
 
 	n, err := strconv.Atoi(value)
@@ -49,7 +49,7 @@ func Bool(key envVar, fallback *bool) (bool, error) {
 		if fallback != nil {
 			return *fallback, nil
 		}
-		return false, fmt.Errorf("%q: %w", key, ErrRequiredEnvNotSet)
+		return false, fmt.Errorf("%q: %w", key, ErrEnvNotSet)
 	}
 
 	b, err := strconv.ParseBool(value)

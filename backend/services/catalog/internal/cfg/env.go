@@ -1,54 +1,54 @@
 package cfg
 
 import (
-	"os"
-	"path/filepath"
+	"strings"
 
 	"github.com/ShantanuBadmanji/saga-simulator/backend/internal/platform/env"
 	"github.com/joho/godotenv"
 )
 
 type EnvVars struct {
-	SqliteDbDir string
-	Port        int
-	LogDir      string
+	SQLITE_DB_DIR string
+	PORT          int
+	LOG_DIR       string
+	GO_ENV        string
+}
+
+func (e *EnvVars) isProd() bool {
+	goEnv := strings.ToLower(e.GO_ENV)
+	return goEnv == "prod" || goEnv == "production"
+}
+
+func (e *EnvVars) IsDev() bool {
+	if e.isProd() {
+		return false
+	}
+
+	return true
 }
 
 func LoadEnvVars() (*EnvVars, error) {
 	// Optional: .env overrides nothing if vars already set in environment
 	_ = godotenv.Load()
 
-	dbDir, err := env.String(env.SqliteDbDir, nil)
+	dbDir, err := env.String(env.SQLITE_DB_DIR, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	port, err := env.Int(env.Port, nil)
+	port, err := env.Int(env.PORT, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	defaultLog := defaultLogDir()
-	logDir, err := env.String(env.LogDir, &defaultLog)
+	logDir, err := env.String(env.LOG_DIR, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	return &EnvVars{
-		SqliteDbDir: dbDir,
-		Port:        port,
-		LogDir:      logDir,
+		SQLITE_DB_DIR: dbDir,
+		PORT:          port,
+		LOG_DIR:       logDir,
 	}, nil
-}
-
-// defaultLogDir resolves logs/ relative to the running binary so the location
-// is stable regardless of the process's working directory.
-// Falls back to "./logs" if the binary path cannot be determined.
-func defaultLogDir() string {
-	exe, err := os.Executable()
-	if err != nil {
-		return "logs"
-	}
-	// binary is at backend/out/catalog → logs should be at backend/logs
-	return filepath.Clean(filepath.Join(filepath.Dir(exe), "..", "logs"))
 }

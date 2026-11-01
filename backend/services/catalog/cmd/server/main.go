@@ -53,7 +53,7 @@ func run(logger *slog.Logger, envVars *cfg.EnvVars) error {
 	mux := http.NewServeMux()
 	registerBasicRoutes(mux)
 
-	dataSourceName := filepath.Join(envVars.SQLITE_DB_DIR, "catalog.db")
+	dataSourceName := filepath.Join(envVars.SQLiteDBDir, "catalog.db")
 	db, err := sql.Open("sqlite3", dataSourceName)
 	if err != nil {
 		return fmt.Errorf("error connecting to db: %w", err)
@@ -71,7 +71,7 @@ func run(logger *slog.Logger, envVars *cfg.EnvVars) error {
 	rootMux.Handle("/catalog/", http.StripPrefix("/catalog", mux))
 
 	server := &http.Server{
-		Addr:    fmt.Sprintf(":%d", envVars.PORT),
+		Addr:    fmt.Sprintf(":%d", envVars.Port),
 		Handler: requestid.RequestIDMiddleware(rootMux),
 	}
 
@@ -103,11 +103,11 @@ func main() {
 	moduleRoot, _ := logging.FindModuleRoot(filename)
 
 	logLevel := slog.LevelInfo
-	if appCfg.IsDev {
+	if appCfg.Dev {
 		logLevel = slog.LevelDebug
 	}
 
-	logger, logCloser, err := logging.New("catalog", envVars.LOG_DIR, moduleRoot, logging.TextHandler, logLevel)
+	logger, logCloser, err := logging.New("catalog", envVars.LogDir, moduleRoot, logging.TextHandler, logLevel)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to initialize logger: %v\n", err)
 		os.Exit(1)

@@ -1,14 +1,14 @@
 package cfg
 
 type AppConfig struct {
-	IsDev bool
+	Dev bool
 }
 
 type AppConfigOption func(*AppConfig)
 
-func NewAppConfig(IsDev bool, opts ...AppConfigOption) *AppConfig {
+func NewAppConfig(dev bool, opts ...AppConfigOption) *AppConfig {
 	cfg := AppConfig{
-		IsDev: IsDev,
+		Dev: dev,
 	}
 
 	for _, o := range opts {
@@ -18,7 +18,7 @@ func NewAppConfig(IsDev bool, opts ...AppConfigOption) *AppConfig {
 	return &cfg
 }
 
-func (cfg *AppConfig) OverideConfigs(opts ...AppConfigOption) {
+func (cfg *AppConfig) Apply(opts ...AppConfigOption) {
 	for _, o := range opts {
 		o(cfg)
 	}

@@ -8,23 +8,20 @@ import (
 )
 
 type EnvVars struct {
-	SQLITE_DB_DIR string
-	PORT          int
-	LOG_DIR       string
-	GO_ENV        string
+	SQLiteDBDir string
+	Port        int
+	LogDir      string
+	GoEnv       string
 }
 
 func (e *EnvVars) isProd() bool {
-	goEnv := strings.ToLower(e.GO_ENV)
+	goEnv := strings.ToLower(e.GoEnv)
 	return goEnv == "prod" || goEnv == "production"
 }
 
 func (e *EnvVars) IsDev() bool {
-	if e.isProd() {
-		return false
-	}
+	return !e.isProd()
 
-	return true
 }
 
 func LoadEnvVars() (*EnvVars, error) {
@@ -46,9 +43,16 @@ func LoadEnvVars() (*EnvVars, error) {
 		return nil, err
 	}
 
+	defaultGoEnv := "dev"
+	goEnv, err := env.String(env.GO_ENV, &defaultGoEnv)
+	if err != nil {
+		return nil, err
+	}
+
 	return &EnvVars{
-		SQLITE_DB_DIR: dbDir,
-		PORT:          port,
-		LOG_DIR:       logDir,
+		SQLiteDBDir: dbDir,
+		Port:        port,
+		LogDir:      logDir,
+		GoEnv:       goEnv,
 	}, nil
 }

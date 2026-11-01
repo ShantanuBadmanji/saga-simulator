@@ -1,9 +1,7 @@
 package httpresponse
 
 import (
-	"bytes"
 	"encoding/json"
-	"log/slog"
 	"net/http"
 
 	"github.com/ShantanuBadmanji/saga-simulator/backend/internal/platform/httprequest"
@@ -52,22 +50,20 @@ type ErrorResponse struct {
 }
 
 func JSON(w http.ResponseWriter, status int, body any) {
-	var buf bytes.Buffer
-
-	if err := json.NewEncoder(&buf).Encode(body); err != nil {
-		slog.Error("failed to encode JSON response", "error", err)
-		code := http.StatusInternalServerError
+	data, err := json.Marshal(body)
+	if err != nil {
 		http.Error(
-			w, http.StatusText(code), code)
+			w,
+			http.StatusText(http.StatusInternalServerError),
+			http.StatusInternalServerError,
+		)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 
-	if _, err := w.Write(buf.Bytes()); err != nil {
-		slog.Error("failed to write JSON response", "error", err)
-	}
+	_, _ = w.Write(data)
 }
 
 func Error(

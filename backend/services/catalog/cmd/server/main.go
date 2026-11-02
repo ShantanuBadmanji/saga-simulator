@@ -16,6 +16,7 @@ import (
 	"github.com/ShantanuBadmanji/saga-simulator/backend/internal/platform/httpserver"
 	"github.com/ShantanuBadmanji/saga-simulator/backend/internal/platform/logging"
 	"github.com/ShantanuBadmanji/saga-simulator/backend/internal/platform/requestid"
+	"github.com/ShantanuBadmanji/saga-simulator/backend/internal/platform/requestlogger"
 	"github.com/ShantanuBadmanji/saga-simulator/backend/services/catalog/internal/api/rest"
 	"github.com/ShantanuBadmanji/saga-simulator/backend/services/catalog/internal/cfg"
 	"github.com/ShantanuBadmanji/saga-simulator/backend/services/catalog/internal/datasource/sqlite/sqlcgen"
@@ -92,7 +93,7 @@ func run(logger *slog.Logger, envVars *cfg.EnvVars) error {
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", envVars.Port),
-		Handler: requestid.RequestIDMiddleware(rootMux),
+		Handler: requestlogger.RequestLoggerMiddleware(requestid.RequestIDMiddleware(rootMux), logger),
 	}
 
 	return httpserver.Run(

@@ -57,7 +57,7 @@ func (h *CatalogHandler) listCategories(w http.ResponseWriter, r *http.Request) 
 
 func (h *CatalogHandler) listProducts(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	categoryID := query.Get(paramParent)
+	categoryID := query.Get(paramCategory)
 	pagination, err := httprequest.ParsePagination(r)
 	if err != nil {
 		httpresponse.Error(w, http.StatusBadRequest, err.Error())

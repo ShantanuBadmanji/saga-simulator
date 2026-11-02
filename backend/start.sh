@@ -26,8 +26,9 @@ echo "created binaries: output=out/*"
 echo ""
 
 echo "executing all the binaries..."
-./out/catalog > >(sed 's/^/[catalog] /') 2>&1 &
+./out/catalog 2>&1 &
 catalog_pid=$!
+echo "executed all the binaries: catalog_pid=$catalog_pid"
 
 
 
@@ -37,7 +38,7 @@ cleanup() {
 	echo ""
     echo "Stopping services..."
 
-    kill -TERM "$catalog_pid"	2>/dev/null || true
+    kill -TERM "$catalog_pid" 2>/dev/null || true
 
     wait "$catalog_pid" 2>/dev/null || true
 
